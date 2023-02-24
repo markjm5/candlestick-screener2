@@ -1,0 +1,126 @@
+<html>
+<head>
+    <style>
+        body { font-family: arial; margin: 20px; }
+        td { padding: 5px; }
+        .bullish { background: green; color: white; }
+        .bearish { background: red; color: white; }
+    </style>
+</head>
+<body>
+    <h1>Scanner</h1>
+    <form>
+        <select name="pattern">
+            <option value="">-- Select a Pattern --</option>
+            {% for key in candlestick_patterns %}
+                <option value="{{ key }}" {% if pattern == key %}selected="selected"{% endif %}>{{ candlestick_patterns[key] }}</option>
+            {% endfor %}
+        </select>
+
+        <input type="submit" value="Scan" />
+    </form>
+    <h2>Sectors</h2>
+    <table>
+        <!--th>
+            <td>
+                Sector
+            </td>
+            <td>
+                Volume
+            </td>
+        </th-->
+
+        {% for sector in sectors %}
+            <tr>
+                <td>
+                    {{ sector }}
+                </td>
+                <td>
+                    {{ sectors[sector]['volume'] }}
+                </td>
+        {% endfor %}
+    </table>
+
+    <h2>Industries</h2>
+    <table>
+        <!--th>
+            <td>
+                Industry
+            </td>
+            <td>
+                Volume
+            </td>
+
+        </th-->
+        {% for industry in industries %}
+        <tr>
+                <td>
+                    {{ industry }}
+                </td>
+                <td>
+                    {{ industries[industry]['volume'] }}
+                </td>
+        {% endfor %}
+    </table>
+
+    <h2>Single Names</h2>
+    <table>
+        <!--th>
+            <td>
+                Ticker
+            </td>
+            <td>
+                Company
+            </td>
+            <td>
+                Sector
+            </td>
+            <td>
+                Industry
+            </td>
+            <td>
+                Vs Avg Vol 10D
+            </td>
+            <td>
+                Vs Avg Vol 3M
+            </td>
+            <td>
+                Outlook
+            </td>
+        </th-->        
+        {% for stock in stocks %}
+
+            {% if stocks[stock]['pattern'] %}
+            <tr>
+                <td>
+                    {{ stock }}
+                </td>
+                <td>
+                    {{ stocks[stock]['company'] }}
+                </td>
+                <td>
+                    {{ stocks[stock]['sector'] }}
+                </td>
+                <td>
+                    {{ stocks[stock]['industry'] }}
+                </td>
+                <td>
+                    {{ stocks[stock]['vs_avg_vol_10d'] }}
+                </td>
+                <td>
+                    {{ stocks[stock]['vs_avg_vol_3m'] }}
+                </td>
+                <td class="{{ stocks[stock]['pattern'] }}">
+                    {{ stocks[stock]['pattern']}}
+                </td>
+            </tr>
+            <!--tr>
+                <td colspan="3">
+                    <img src="https://finviz.com/chart.ashx?t={{ stock }}&ty=c&ta=1&p=d&s=l" />
+                </td>
+            </tr-->
+            {% endif %}
+        {% endfor %}
+    </table>
+</body>
+</html>

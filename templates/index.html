@@ -8,7 +8,9 @@
     </style>
 </head>
 <body>
-    <h1>Technical Scanner</h1>
+    <h1>Scanner</h1>
+    <a href="/snapshot"><h3>Get Snapshot</h3></a>
+
     <form>
         <select name="pattern">
             <option value="">-- Select a Pattern --</option>
@@ -19,32 +21,41 @@
 
         <input type="submit" value="Scan" />
     </form>
-
+    {% if response %}
     <table>
         <tr>
-            <th>symbol</th>
-            <th>company</th>
-            <th>signal</th>
+            <td>
+                Start Time: 
+            </td>
+
+            <td>
+                {{ response['01_start_time'] }}
+            </td>
+
         </tr>
-        {% for stock in stocks %}
-            {% if stocks[stock][pattern] %}
-            <tr>
-                <td>
-                    {{ stock }}
-                </td>
-                <td>
-                    {{ stocks[stock]['company'] }}
-                </td>
-                <td class="{{ stocks[stock][pattern] }}">
-                    {{ stocks[stock][pattern]}}
-                </td>
-            <tr>
-                <td colspan="3">
-                    <img src="https://finviz.com/chart.ashx?t={{ stock }}&ty=c&ta=1&p=d&s=l" />
-                </td>
-            </tr>
-            {% endif %}
-        {% endfor %}
+        <tr>
+            <td>
+                End Time: 
+            </td>
+
+            <td>
+                {{ response['02_end_time'] }}
+            </td>
+
+        </tr>
+        <tr>
+            <td>
+                Total Time: 
+            </td>
+
+            <td>
+                {{ response['03_total'] }}
+            </td>
+
+        </tr>
+
     </table>
+    {% endif %}
+
 </body>
 </html>
