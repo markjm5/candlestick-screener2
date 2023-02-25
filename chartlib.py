@@ -1,5 +1,6 @@
 import os,csv
 import glob
+import pickle
 import pandas as pd
 
 def is_consolidating(df, percentage=2):
@@ -38,13 +39,11 @@ def get_data():
 
     with open('datasets/{}'.format(latest_file)) as f:
         for row in csv.reader(f):
-            #import pdb;  pdb.set_trace()
             if(header):
                 header = False
                 continue
             else:
                 try:
-                    #import pdb; pdb.set_trace()
                     shares_outstanding = float(row[41])
 
                     shares_outstanding = shares_outstanding *1000000
@@ -102,10 +101,20 @@ def get_data():
             df_tickers.loc[df_tickers["ticker"] == symbol, "outlook"] = outlook
             df_tickers.loc[df_tickers["ticker"] == symbol, "percentage"] = percentage
 
-            #import pdb;pdb.set_trace()
-            #df_tickers.loc[len(df_tickers.index)] = [symbol, company, sector, industry, shares_outstanding, last_volume, vs_avg_vol_10d, vs_avg_vol_3m, outlook, percentage]
-
         except Exception as e:
             print('failed on filename: ', filename)
+
+    #pickle the data
+
+    pickle_out = open("tickers.pickle", "wb")
+    pickle.dump(df_tickers,pickle_out)
+    pickle_out.close()
+
+    return df_tickers
+
+def load_data_from_pickle():
+
+    pickle_in = open("tickers.pickle","rb")
+    df_tickers = pickle.load(pickle_in)
 
     return df_tickers

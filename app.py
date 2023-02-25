@@ -1,11 +1,12 @@
-import os, csv
+import os, sys, time #csv
 from datetime import datetime, date, timedelta
 import glob
+import json
 import yfinance as yf
 import pandas as pd
 from flask import Flask, escape, request, render_template
 from patterns import candlestick_patterns
-from chartlib import is_breaking_out, is_consolidating, get_data #, transpose_df_string_numbers
+from chartlib import is_breaking_out, is_consolidating, get_data, load_data_from_pickle #, transpose_df_string_numbers
 
 app = Flask(__name__)
 
@@ -16,9 +17,6 @@ date_str_start = "2007-01-01"
 list_of_files = glob.glob('datasets/*.csv',) # * means all if need specific format then *.csv
 latest_file = max(list_of_files, key=os.path.getctime)
 latest_file = latest_file.replace("datasets\\", "")
-
-#data_tickers =  {'ticker': [],'company': [], 'sector': [], 'industry': [], 'shares_outstanding': [],'last_volume': [], 'vs_avg_vol_10d': [], 'vs_avg_vol_3m': [], 'outlook': [],  'percentage': []}
-#df_tickers = pd.DataFrame(data_tickers)
 
 @app.route('/snapshot')
 def snapshot():
@@ -68,9 +66,29 @@ def index():
     industries = {}
     percentage_dict = {}
 
-    df_tickers = get_data()
-
     if pattern:
+        #TODO: Serealise df every day, and read from serealised object.
+
+        pickle_file = glob.glob("*.pickle")[0]
+        file_path = "%s\\%s" % (sys.path[0],pickle_file)
+
+        ti_m = os.path.getmtime(file_path)        
+        m_ti = time.ctime(ti_m)
+        t_obj = time.strptime(m_ti)
+
+        #TODO: Compare with todays_date
+        dt_pickle = datetime.fromtimestamp(time.mktime(t_obj))
+        timedelta = dt_pickle.date() - todays_date
+        if(timedelta.days == 0):
+            api_loaded_today = True
+        else:
+            api_loaded_today = False
+
+        if(api_loaded_today):
+            df_tickers = load_data_from_pickle()
+        else:
+            df_tickers = get_data()
+
         if(pattern == 'VOLUME'):
             template = "volume.html"
 

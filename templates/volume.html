@@ -5,10 +5,11 @@
         td { padding: 5px; }
         .bullish { background: green; color: white; }
         .bearish { background: red; color: white; }
+        .header { border-bottom:2px solid orangered;padding-bottom:5px; }
     </style>
 </head>
 <body>
-    <h1>Scanner</h1>
+    <h1 class="header">Scanner</h1>
     <form>
         <select name="pattern">
             <option value="">-- Select a Pattern --</option>
@@ -25,7 +26,7 @@
     <p><a href="#single"> Single Names </a></p>    
     <p><a href="#percentage"> Percentage of Total Shares </a></p>    
 
-    <h2 id="sectors">Sectors</h2>
+    <h2 id="sectors" class="header">Sectors</h2>
     <table>
         <!--th>
             <td>
@@ -48,7 +49,7 @@
         {% endfor %}
     </table>
 
-    <h2 id="industries">Industries</h2>
+    <h2 id="industries" class="header">Industries</h2>
     <table>
         <!--th>
             <td>
@@ -71,7 +72,7 @@
         {% endfor %}
     </table>
 
-    <h2 id="single">Single Names</h2>
+    <h2 id="single" class="header">Single Names</h2>
     <table>
         <!--th>
             <td>
@@ -131,7 +132,7 @@
         {% endfor %}
     </table>
 
-    <h2 id="percentage">Percentage of Total Volume</h2>
+    <h2 id="percentage" class="header">Percentage of Total Volume</h2>
     <table>
         {% for stock in percentage %}
 
@@ -164,8 +165,5 @@
             {% endif %}
         {% endfor %}
     </table>
-
-
-
 </body>
 </html>

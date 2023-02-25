@@ -5,12 +5,13 @@
         td { padding: 5px; }
         .bullish { background: green; color: white; }
         .bearish { background: red; color: white; }
+        .header { border-bottom:2px solid orangered;padding-bottom:5px; }
     </style>
 </head>
 <body>
 
 
-    <h1>Scanner</h1>
+    <h1 class="header">Scanner</h1>
     <form>
         <select name="pattern">
             <option value="">-- Select a Pattern --</option>
@@ -25,7 +26,7 @@
     <p><a href="#consolidating"> Consolidating </a></p>
     <p><a href="#breakout"> Breakout </a></p>    
 
-    <h2 id="consolidating">Consolidating</h2>
+    <h2 id="consolidating" class="header">Consolidating</h2>
     <table>
         {% for symbol in consolidating %}
             <tr>
@@ -52,7 +53,7 @@
         {% endfor %}
     </table>
 
-    <h2 id="breakout">Breakout</h2>
+    <h2 id="breakout" class="header">Breakout</h2>
     <table>
         {% for symbol in breakout %}
         <tr>
