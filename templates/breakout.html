@@ -1,0 +1,80 @@
+<html>
+<head>
+    <style>
+        body { font-family: arial; margin: 20px; }
+        td { padding: 5px; }
+        .bullish { background: green; color: white; }
+        .bearish { background: red; color: white; }
+    </style>
+</head>
+<body>
+
+
+    <h1>Scanner</h1>
+    <form>
+        <select name="pattern">
+            <option value="">-- Select a Pattern --</option>
+            {% for key in candlestick_patterns %}
+                <option value="{{ key }}" {% if pattern == key %}selected="selected"{% endif %}>{{ candlestick_patterns[key] }}</option>
+            {% endfor %}
+        </select>
+
+        <input type="submit" value="Scan" />
+    </form>
+
+    <p><a href="#consolidating"> Consolidating </a></p>
+    <p><a href="#breakout"> Breakout </a></p>    
+
+    <h2 id="consolidating">Consolidating</h2>
+    <table>
+        {% for symbol in consolidating %}
+            <tr>
+                <td>
+                    {{ symbol }}
+                </td>
+                <td>
+                    {{ consolidating[symbol]['company'] }}
+                </td>
+                <td>
+                    {{ consolidating[symbol]['sector'] }}
+                </td>
+                <td>
+                    {{ consolidating[symbol]['industry'] }}
+                </td>
+
+            </tr>
+        <tr>
+            <td colspan="3">
+                <img src="https://finviz.com/chart.ashx?t={{ symbol }}&ty=c&ta=1&p=d&s=l" />
+            </td>
+        </tr>        
+
+        {% endfor %}
+    </table>
+
+    <h2 id="breakout">Breakout</h2>
+    <table>
+        {% for symbol in breakout %}
+        <tr>
+                <td>
+                    {{ symbol }}
+                </td>
+                <td>
+                    {{ breakout[symbol]['company'] }}
+                </td>
+                <td>
+                    {{ breakout[symbol]['sector'] }}
+                </td>
+                <td>
+                    {{ breakout[symbol]['industry'] }}
+                </td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <img src="https://finviz.com/chart.ashx?t={{ symbol }}&ty=c&ta=1&p=d&s=l" />
+            </td>
+        </tr>        
+        {% endfor %}
+    </table>
+</body>
+</html>

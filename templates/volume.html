@@ -19,7 +19,13 @@
 
         <input type="submit" value="Scan" />
     </form>
-    <h2>Sectors</h2>
+
+    <p><a href="#sectors"> Sectors </a></p>
+    <p><a href="#industries"> Industries </a></p>    
+    <p><a href="#single"> Single Names </a></p>    
+    <p><a href="#percentage"> Percentage of Total Shares </a></p>    
+
+    <h2 id="sectors">Sectors</h2>
     <table>
         <!--th>
             <td>
@@ -38,10 +44,11 @@
                 <td>
                     {{ sectors[sector]['volume'] }}
                 </td>
+            </tr>
         {% endfor %}
     </table>
 
-    <h2>Industries</h2>
+    <h2 id="industries">Industries</h2>
     <table>
         <!--th>
             <td>
@@ -60,10 +67,11 @@
                 <td>
                     {{ industries[industry]['volume'] }}
                 </td>
+        </tr>
         {% endfor %}
     </table>
 
-    <h2>Single Names</h2>
+    <h2 id="single">Single Names</h2>
     <table>
         <!--th>
             <td>
@@ -122,5 +130,42 @@
             {% endif %}
         {% endfor %}
     </table>
+
+    <h2 id="percentage">Percentage of Total Volume</h2>
+    <table>
+        {% for stock in percentage %}
+
+            {% if percentage[stock]['pattern'] %}
+            <tr>
+                <td>
+                    {{ stock }}
+                </td>
+                <td>
+                    {{ percentage[stock]['company'] }}
+                </td>
+                <td>
+                    {{ percentage[stock]['sector'] }}
+                </td>
+                <td>
+                    {{ percentage[stock]['industry'] }}
+                </td>
+                <td>
+                    {{ percentage[stock]['percentage'] }}
+                </td>
+                <td class="{{ percentage[stock]['pattern'] }}">
+                    {{ percentage[stock]['pattern']}}
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3">
+                    <img src="https://finviz.com/chart.ashx?t={{ stock }}&ty=c&ta=1&p=d&s=l" />
+                </td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+    </table>
+
+
+
 </body>
 </html>

@@ -5,6 +5,7 @@ import yfinance as yf
 import pandas as pd
 from flask import Flask, escape, request, render_template
 from patterns import candlestick_patterns
+from chartlib import is_breaking_out, is_consolidating, get_data #, transpose_df_string_numbers
 
 app = Flask(__name__)
 
@@ -16,6 +17,8 @@ list_of_files = glob.glob('datasets/*.csv',) # * means all if need specific form
 latest_file = max(list_of_files, key=os.path.getctime)
 latest_file = latest_file.replace("datasets\\", "")
 
+#data_tickers =  {'ticker': [],'company': [], 'sector': [], 'industry': [], 'shares_outstanding': [],'last_volume': [], 'vs_avg_vol_10d': [], 'vs_avg_vol_3m': [], 'outlook': [],  'percentage': []}
+#df_tickers = pd.DataFrame(data_tickers)
 
 @app.route('/snapshot')
 def snapshot():
@@ -63,74 +66,30 @@ def index():
     stocks = {}
     sectors = {}
     industries = {}
+    percentage_dict = {}
 
-    data_tickers =  {'ticker': [],'company': [], 'sector': [], 'industry': []}
-    data_stock_volume = {'ticker': [],'company': [],'last_volume': [], 'vs_avg_vol_10d': [], 'vs_avg_vol_3m': [], 'outlook': [], 'sector': [], 'industry': []}
-    
-    df_tickers = pd.DataFrame(data_tickers)
-    df_stock_volume = pd.DataFrame(data_stock_volume)
+    df_tickers = get_data()
 
-    header = True
-
-    with open('datasets/{}'.format(latest_file)) as f:
-        for row in csv.reader(f):
-            #import pdb;  pdb.set_trace()
-            if(header):
-                header = False
-                continue
-            else:
-                df_tickers.loc[len(df_tickers.index)] = [row[1], row[0], row[7], row[8]]
-
-                #stocks[row[1]] = {'company': row[0]}
-                #import pdb; pdb.set_trace()
-                #df = pd.read_csv('datasets/daily/{}'.format(filename))
-    #import pdb; pdb.set_trace()
     if pattern:
         if(pattern == 'VOLUME'):
             template = "volume.html"
-            for index, row in df_tickers.iterrows():
-                filename = "{}.csv".format(row['ticker'])
-                try:
-                    df = pd.read_csv('datasets/daily/{}'.format(filename))
-                    df['Date'] = pd.to_datetime(df['Date'],format='%Y-%m-%d')
 
-                    symbol = row['ticker']
-                    company = row['company']
-                    sector = row['sector']
-                    industry = row['industry']
-                
-                    df_10d = df.tail(10)
-                    df_3m = df.tail(30)
-
-                    avg_vol_10d = df_10d['Volume'].mean()
-                    avg_vol_3m = df_3m['Volume'].mean()
-                    last_volume = df.tail(1)['Volume'].values[0]
-                    #import pdb; pdb.set_trace()
-                    prev_close = df[-2:-1]['Adj Close'].values[0]
-                    last_close = df[-1:]['Adj Close'].values[0]
-
-                    #Create calculated metrics
-                    vs_avg_vol_10d = last_volume/avg_vol_10d
-                    vs_avg_vol_3m = last_volume/avg_vol_3m
-                    
-                    if(last_close > prev_close):
-                        outlook = 'bullish'
-                    else:
-                        outlook = 'bearish'
-                                            
-                    df_stock_volume.loc[len(df_stock_volume.index)] = [symbol, company, last_volume, vs_avg_vol_10d, vs_avg_vol_3m, outlook, sector, industry]
-
-                except Exception as e:
-                    print('failed on filename: ', filename)
-            df_stock_volume = df_stock_volume.sort_values(by=['vs_avg_vol_3m'], ascending=False)        
+            df_stock_volume = df_tickers.sort_values(by=['vs_avg_vol_3m'], ascending=False)        
+            df_stock_volume = df_stock_volume[df_stock_volume.company != '']
+            df_stock_volume = df_stock_volume[df_stock_volume.vs_avg_vol_3m > 0]
 
             for index, row in df_stock_volume.iterrows():
                 stocks[row['ticker']] = {'company': row['company'], 'vs_avg_vol_10d': "{:.2%}".format(row['vs_avg_vol_10d']),'vs_avg_vol_3m': "{:.2%}".format(row['vs_avg_vol_3m']), 'pattern': row['outlook'], 'sector': row['sector'], 'industry': row['industry']}
 
-            #data_stock_volume = {'ticker': [],'company': [],'last_volume': [], 'vs_avg_vol_10d': [], 'vs_avg_vol_3m': [], 'outlook': [], 'sector': [], 'industry': []}
+            df_percentage = df_stock_volume.sort_values(by=['percentage'], ascending=False).reset_index() 
+            df_percentage = df_percentage.drop(['vs_avg_vol_10d','vs_avg_vol_3m'], axis=1)
+            df_percentage = df_percentage[df_percentage.percentage > 0.05]
+
+            for index, row in df_percentage.iterrows():
+                percentage_dict[row['ticker']] = {'company': row['company'],'pattern': row['outlook'], 'sector': row['sector'], 'industry': row['industry'], 'percentage':  "{:.2%}".format(row['percentage'])}
 
             df_vol_data_all_sectors = df_stock_volume.drop(['company','ticker','industry','vs_avg_vol_10d','vs_avg_vol_3m', 'outlook'], axis=1)
-            #import pdb; pdb.set_trace()
+
             df_vol_data_all_sectors = df_vol_data_all_sectors.groupby(['sector']).sum().sort_values(by=['last_volume'], ascending=False).reset_index()
 
             df_vol_data_all_sectors = df_vol_data_all_sectors.head(5)
@@ -146,5 +105,45 @@ def index():
             for index, row in df_vol_data_all_industries.iterrows():
                 industries[row['industry']] = {'volume': row['last_volume']}
 
-       #import pdb; pdb.set_trace()            
-    return render_template(template, candlestick_patterns=candlestick_patterns, stocks=stocks, sectors=sectors, industries=industries, pattern=pattern)
+            return render_template(template, candlestick_patterns=candlestick_patterns, stocks=stocks, sectors=sectors, industries=industries, percentage=percentage_dict, pattern=pattern)
+
+        if(pattern == 'BREAKOUT'):
+            template = "breakout.html"
+
+            consolidating = {}
+            breakout = {}
+            
+            data =  {'symbol': [],'company': [], 'sector': [], 'industry': []}
+            
+            df_consolidating = pd.DataFrame(data)
+            df_breakout = pd.DataFrame(data)
+
+            for index, row in df_tickers.iterrows():
+                filename = "{}.csv".format(row['ticker'])
+
+                try:
+                    df = pd.read_csv('datasets/daily/{}'.format(filename))
+
+                    symbol = row['ticker']
+                    company = row['company']
+                    sector = row['sector']
+                    industry = row['industry']
+                
+                    if is_consolidating(df, percentage=2.5):
+                        df_consolidating.loc[len(df_consolidating.index)] = [symbol, company, sector, industry]
+
+                    if is_breaking_out(df):
+                        df_breakout.loc[len(df_breakout.index)] = [symbol, company, sector, industry]
+
+                except Exception as e:
+                    print('failed on filename: ', filename)
+
+            for index, row in df_consolidating.iterrows():
+                consolidating[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry']}
+
+            for index, row in df_breakout.iterrows():
+                breakout[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry']}
+
+            return render_template(template, candlestick_patterns=candlestick_patterns, consolidating=consolidating, breakout=breakout, pattern=pattern)
+
+    return render_template(template, candlestick_patterns=candlestick_patterns, pattern=pattern)
