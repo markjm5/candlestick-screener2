@@ -1,11 +1,10 @@
 import os,csv
 import glob
-#import yfinance as yf
 import pandas as pd
 
 def is_consolidating(df, percentage=2):
     recent_candlesticks = df[-15:]
-    #import pdb; pdb.set_trace()
+
     max_close = recent_candlesticks['Close'].max()
     min_close = recent_candlesticks['Close'].min()
 
@@ -25,7 +24,6 @@ def is_breaking_out(df, percentage=2.5):
             return True
 
     return False
-
 
 def get_data():
     list_of_files = glob.glob('datasets/*.csv',) # * means all if need specific format then *.csv
@@ -111,26 +109,3 @@ def get_data():
             print('failed on filename: ', filename)
 
     return df_tickers
-
-def transpose_df_string_numbers(df, column):
-    import pdb; pdb.set_trace()
-    #df[column] = df[column].str.replace("M","")
-    #df[column] = df[column].str.replace("k","")
-    #df[column] = df[column].str.replace("N/A","0.00")
-    #Convert numbers to numeric
-    df[column] = df[column].astype(float)
-    #where bool_million=True, multiply by a million, otherwise, multiply by a thousand
-    df[column]  = np.where(df['bool_million'] == True, df[column]*1000000, df[column]*1000)
-    df[column] = df[column].astype(int)
-
-
-"""
-for filename in os.listdir('datasets/daily'):
-    df = pandas.read_csv('datasets/daily/{}'.format(filename))
-    
-    if is_consolidating(df, percentage=2.5):
-        print("{} is consolidating".format(filename))
-
-    if is_breaking_out(df):
-        print("{} is breaking out".format(filename))
-"""
