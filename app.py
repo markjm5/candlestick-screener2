@@ -8,6 +8,13 @@ from flask import Flask, escape, request, render_template
 from patterns import candlestick_patterns
 from chartlib import is_breaking_out, is_consolidating, get_ticker_data, get_breakout_data, load_data_from_pickle #, transpose_df_string_numbers
 
+# TODO: Monthly Earnings Calendar
+# TODO: Economic Calendar
+# TODO: Ticker Geographic Exposure Search
+# TODO: ATR Monthly, ATR Quarterly, Price Action csv download
+# TODO: Add Common Header
+# TODO: Add Header Menu Links
+
 app = Flask(__name__)
 
 todays_date = date.today()
