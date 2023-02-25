@@ -6,7 +6,7 @@ import yfinance as yf
 import pandas as pd
 from flask import Flask, escape, request, render_template
 from patterns import candlestick_patterns
-from chartlib import is_breaking_out, is_consolidating, get_ticker_data, get_breakout_data, load_data_from_pickle #, transpose_df_string_numbers
+from chartlib import get_ticker_data, get_breakout_data, load_data_from_pickle
 
 # TODO: Monthly Earnings Calendar
 # TODO: Economic Calendar

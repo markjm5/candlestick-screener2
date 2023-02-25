@@ -1,5 +1,5 @@
-import os,csv
-import glob
+#import os,csv
+#import glob
 import pickle
 import pandas as pd
 
@@ -128,6 +128,6 @@ def load_data_from_pickle(name):
     pickle_file = "{}.pickle".format(name)
 
     pickle_in = open(pickle_file,"rb")
-    df_tickers = pickle.load(pickle_in)
+    df = pickle.load(pickle_in)
 
-    return df_tickers
+    return df
