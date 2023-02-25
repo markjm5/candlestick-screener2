@@ -6,7 +6,7 @@ import yfinance as yf
 import pandas as pd
 from flask import Flask, escape, request, render_template
 from patterns import candlestick_patterns
-from chartlib import is_breaking_out, is_consolidating, get_data, load_data_from_pickle #, transpose_df_string_numbers
+from chartlib import is_breaking_out, is_consolidating, get_ticker_data, get_breakout_data, load_data_from_pickle #, transpose_df_string_numbers
 
 app = Flask(__name__)
 
@@ -25,6 +25,9 @@ def snapshot():
     now_start = datetime.now()
     start_time = now_start.strftime("%H:%M:%S")    
 
+    data_tickers =  {'ticker': [],'company': [], 'sector': [], 'industry': [], 'shares_outstanding': [],'last_volume': [], 'vs_avg_vol_10d': [], 'vs_avg_vol_3m': [], 'outlook': [],  'percentage': []}    
+    df_tickers_partial = pd.DataFrame(data_tickers)
+
     header = True
     with open('datasets/{}'.format(latest_file)) as f:
         for line in f:
@@ -37,9 +40,24 @@ def snapshot():
             else:
                 symbol = line.split(",")[1]
                 symbol = symbol.replace("\"","")
+                company = line.split(",")[0].replace('\"','')
+                sector = line.split(",")[7].replace('\"','')
+                industry = line.split(",")[8].replace('\"','')
+
+                try:
+                    shares_outstanding = float(line.split(",")[41].replace('\n', '').replace('\"',''))
+                    shares_outstanding = shares_outstanding *1000000                    
+                except Exception as e:
+                    shares_outstanding = 0
+
                 data = yf.download(symbol, start=date_str_start, end=date_str_today)
                 data.to_csv('datasets/daily/{}.csv'.format(symbol))
                 print(symbol)
+
+                df_tickers_partial.loc[len(df_tickers_partial.index)] = [symbol, company, sector, industry, shares_outstanding, 0,0,0,0,0]
+
+    df_tickers = get_ticker_data(df_tickers_partial)
+    success = get_breakout_data(df_tickers)
 
     now_finish = datetime.now()
     finish_time = now_finish.strftime("%H:%M:%S")
@@ -67,27 +85,7 @@ def index():
     percentage_dict = {}
 
     if pattern:
-        #TODO: Serealise df every day, and read from serealised object.
-
-        pickle_file = glob.glob("*.pickle")[0]
-        file_path = "%s\\%s" % (sys.path[0],pickle_file)
-
-        ti_m = os.path.getmtime(file_path)        
-        m_ti = time.ctime(ti_m)
-        t_obj = time.strptime(m_ti)
-
-        #TODO: Compare with todays_date
-        dt_pickle = datetime.fromtimestamp(time.mktime(t_obj))
-        timedelta = dt_pickle.date() - todays_date
-        if(timedelta.days == 0):
-            api_loaded_today = True
-        else:
-            api_loaded_today = False
-
-        if(api_loaded_today):
-            df_tickers = load_data_from_pickle()
-        else:
-            df_tickers = get_data()
+        df_tickers = load_data_from_pickle("01_tickers")
 
         if(pattern == 'VOLUME'):
             template = "volume.html"
@@ -130,31 +128,9 @@ def index():
 
             consolidating = {}
             breakout = {}
-            
-            data =  {'symbol': [],'company': [], 'sector': [], 'industry': []}
-            
-            df_consolidating = pd.DataFrame(data)
-            df_breakout = pd.DataFrame(data)
 
-            for index, row in df_tickers.iterrows():
-                filename = "{}.csv".format(row['ticker'])
-
-                try:
-                    df = pd.read_csv('datasets/daily/{}'.format(filename))
-
-                    symbol = row['ticker']
-                    company = row['company']
-                    sector = row['sector']
-                    industry = row['industry']
-                
-                    if is_consolidating(df, percentage=2.5):
-                        df_consolidating.loc[len(df_consolidating.index)] = [symbol, company, sector, industry]
-
-                    if is_breaking_out(df):
-                        df_breakout.loc[len(df_breakout.index)] = [symbol, company, sector, industry]
-
-                except Exception as e:
-                    print('failed on filename: ', filename)
+            df_consolidating = load_data_from_pickle("02_consolidating")
+            df_breakout = load_data_from_pickle("03_breakout")
 
             for index, row in df_consolidating.iterrows():
                 consolidating[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry']}

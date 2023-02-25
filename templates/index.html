@@ -9,19 +9,25 @@
     </style>
 </head>
 <body>
-    <h1 class="header">Scanner</h1>
-    <a href="/snapshot"><h3>Get Snapshot</h3></a>
+    {% if response %}
+        <a href="/"><h3>Return Home</h3></a>
+    {% else %}
+        <h1 class="header">Scanner</h1>
+        <a href="/snapshot"><h3>Get Snapshot (~ 40 minutes)</h3></a>
+    
+        <form>
+            <select name="pattern">
+                <option value="">-- Select a Pattern --</option>
+                {% for key in candlestick_patterns %}
+                    <option value="{{ key }}" {% if pattern == key %}selected="selected"{% endif %}>{{ candlestick_patterns[key] }}</option>
+                {% endfor %}
+            </select>
+    
+            <input type="submit" value="Scan" />
+        </form>
+    
+    {% endif %}
 
-    <form>
-        <select name="pattern">
-            <option value="">-- Select a Pattern --</option>
-            {% for key in candlestick_patterns %}
-                <option value="{{ key }}" {% if pattern == key %}selected="selected"{% endif %}>{{ candlestick_patterns[key] }}</option>
-            {% endfor %}
-        </select>
-
-        <input type="submit" value="Scan" />
-    </form>
     {% if response %}
     <table>
         <tr>

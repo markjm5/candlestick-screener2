@@ -26,31 +26,7 @@ def is_breaking_out(df, percentage=2.5):
 
     return False
 
-def get_data():
-    list_of_files = glob.glob('datasets/*.csv',) # * means all if need specific format then *.csv
-    latest_file = max(list_of_files, key=os.path.getctime)
-    latest_file = latest_file.replace("datasets\\", "")    
-
-    data_tickers =  {'ticker': [],'company': [], 'sector': [], 'industry': [], 'shares_outstanding': [],'last_volume': [], 'vs_avg_vol_10d': [], 'vs_avg_vol_3m': [], 'outlook': [],  'percentage': []}
-    
-    df_tickers = pd.DataFrame(data_tickers)
-
-    header = True
-
-    with open('datasets/{}'.format(latest_file)) as f:
-        for row in csv.reader(f):
-            if(header):
-                header = False
-                continue
-            else:
-                try:
-                    shares_outstanding = float(row[41])
-
-                    shares_outstanding = shares_outstanding *1000000
-                except Exception as e:
-                    shares_outstanding = 0
-
-                df_tickers.loc[len(df_tickers.index)] = [row[1], row[0], row[7], row[8], shares_outstanding, 0,0,0,0,0]
+def get_ticker_data(df_tickers):
 
     for index, row in df_tickers.iterrows():
         filename = "{}.csv".format(row['ticker'])
@@ -59,9 +35,6 @@ def get_data():
             df['Date'] = pd.to_datetime(df['Date'],format='%Y-%m-%d')
 
             symbol = row['ticker']
-            company = row['company']
-            sector = row['sector']
-            industry = row['industry']
             shares_outstanding = row['shares_outstanding']
 
             df_10d = df.tail(10)
@@ -105,16 +78,56 @@ def get_data():
             print('failed on filename: ', filename)
 
     #pickle the data
-
-    pickle_out = open("tickers.pickle", "wb")
+    pickle_out = open("01_tickers.pickle", "wb")
     pickle.dump(df_tickers,pickle_out)
     pickle_out.close()
 
     return df_tickers
 
-def load_data_from_pickle():
+def get_breakout_data(df_tickers):
+    data =  {'symbol': [],'company': [], 'sector': [], 'industry': []}
+    
+    df_consolidating = pd.DataFrame(data)
+    df_breakout = pd.DataFrame(data)
 
-    pickle_in = open("tickers.pickle","rb")
+    for index, row in df_tickers.iterrows():
+        filename = "{}.csv".format(row['ticker'])
+
+        try:
+            df = pd.read_csv('datasets/daily/{}'.format(filename))
+
+            symbol = row['ticker']
+            company = row['company']
+            sector = row['sector']
+            industry = row['industry']
+        
+            if is_consolidating(df, percentage=2.5):
+                df_consolidating.loc[len(df_consolidating.index)] = [symbol, company, sector, industry]
+
+            if is_breaking_out(df):
+                df_breakout.loc[len(df_breakout.index)] = [symbol, company, sector, industry]
+
+        except Exception as e:
+            print('failed on filename: ', filename)
+
+    #pickle the data
+    pickle_out = open("02_consolidating.pickle", "wb")
+    pickle.dump(df_consolidating,pickle_out)
+    pickle_out.close()
+
+    #pickle the data
+    pickle_out = open("03_breakout.pickle", "wb")
+    pickle.dump(df_breakout,pickle_out)
+    pickle_out.close()
+
+    return True
+
+
+def load_data_from_pickle(name):
+
+    pickle_file = "{}.pickle".format(name)
+
+    pickle_in = open(pickle_file,"rb")
     df_tickers = pickle.load(pickle_in)
 
     return df_tickers
