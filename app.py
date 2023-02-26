@@ -51,17 +51,19 @@ def snapshot():
                 sector = line.split(",")[7].replace('\"','')
                 industry = line.split(",")[8].replace('\"','')
 
-                try:
-                    shares_outstanding = float(line.split(",")[41].replace('\n', '').replace('\"',''))
-                    shares_outstanding = shares_outstanding *1000000                    
-                except Exception as e:
-                    shares_outstanding = 0
+                #TODO: Check that Company is not empty, and only add to the master ticker file if company is not empty
+                if(company != ''):
+                    try:
+                        shares_outstanding = float(line.split(",")[41].replace('\n', '').replace('\"',''))
+                        shares_outstanding = shares_outstanding *1000000                    
+                    except Exception as e:
+                        shares_outstanding = 0
 
-                data = yf.download(symbol, start=date_str_start, end=date_str_today)
-                data.to_csv('datasets/daily/{}.csv'.format(symbol))
-                print(symbol)
+                    data = yf.download(symbol, start=date_str_start, end=date_str_today)
+                    data.to_csv('datasets/daily/{}.csv'.format(symbol))
+                    print(symbol)
 
-                df_tickers_partial.loc[len(df_tickers_partial.index)] = [symbol, company, sector, industry, shares_outstanding, 0,0,0,0,0]
+                    df_tickers_partial.loc[len(df_tickers_partial.index)] = [symbol, company, sector, industry, shares_outstanding, 0,0,0,0,0]
 
     df_tickers = get_ticker_data(df_tickers_partial)
     success = get_breakout_data(df_tickers)
@@ -98,7 +100,7 @@ def index():
             template = "volume.html"
 
             df_stock_volume = df_tickers.sort_values(by=['vs_avg_vol_3m'], ascending=False)        
-            df_stock_volume = df_stock_volume[df_stock_volume.company != '']
+            #df_stock_volume = df_stock_volume[df_stock_volume.company != '']
             df_stock_volume = df_stock_volume[df_stock_volume.vs_avg_vol_3m > 0]
 
             for index, row in df_stock_volume.iterrows():
