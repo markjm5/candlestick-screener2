@@ -28,6 +28,7 @@ latest_file = latest_file.replace("datasets\\", "")
 @app.route('/snapshot')
 def snapshot():
     #get date range
+    exchanges = ['NYSE', 'NSDQ']
 
     now_start = datetime.now()
     start_time = now_start.strftime("%H:%M:%S")    
@@ -45,14 +46,16 @@ def snapshot():
                 header = False
                 continue
             else:
+                #import pdb; pdb.set_trace()
                 symbol = line.split(",")[1]
                 symbol = symbol.replace("\"","")
                 company = line.split(",")[0].replace('\"','')
                 sector = line.split(",")[7].replace('\"','')
                 industry = line.split(",")[8].replace('\"','')
-
+                exchange = line.split(",")[5].replace('\"','')
+                exchanges = ['NYSE', 'NSDQ']
                 #TODO: Check that Company is not empty, and only add to the master ticker file if company is not empty
-                if(company != ''):
+                if(company != '' and exchange in exchanges):
                     try:
                         shares_outstanding = float(line.split(",")[41].replace('\n', '').replace('\"',''))
                         shares_outstanding = shares_outstanding *1000000                    
