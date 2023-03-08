@@ -73,6 +73,7 @@ def get_ticker_data(df_tickers):
             df_tickers.loc[df_tickers["ticker"] == symbol, "vs_avg_vol_3m"] = vs_avg_vol_3m
             df_tickers.loc[df_tickers["ticker"] == symbol, "outlook"] = outlook
             df_tickers.loc[df_tickers["ticker"] == symbol, "percentage"] = percentage
+            df_tickers.loc[df_tickers["ticker"] == symbol, "last"] = last_close
 
         except Exception as e:
             print('failed on filename: ', filename)
@@ -85,7 +86,7 @@ def get_ticker_data(df_tickers):
     return df_tickers
 
 def get_breakout_data(df_tickers):
-    data =  {'symbol': [],'company': [], 'sector': [], 'industry': []}
+    data =  {'symbol': [],'company': [], 'sector': [], 'industry': [] , 'last': []}
     
     df_consolidating = pd.DataFrame(data)
     df_breakout = pd.DataFrame(data)
@@ -100,16 +101,17 @@ def get_breakout_data(df_tickers):
             company = row['company']
             sector = row['sector']
             industry = row['industry']
+            last = row['last']
         
             if is_consolidating(df, percentage=2.5):
-                df_consolidating.loc[len(df_consolidating.index)] = [symbol, company, sector, industry]
+                df_consolidating.loc[len(df_consolidating.index)] = [symbol, company, sector, industry, last]
 
             if is_breaking_out(df):
-                df_breakout.loc[len(df_breakout.index)] = [symbol, company, sector, industry]
+                df_breakout.loc[len(df_breakout.index)] = [symbol, company, sector, industry, last]
 
         except Exception as e:
             print('failed on filename: ', filename)
-
+    import pdb; pdb.set_trace()
     #pickle the data
     pickle_out = open("02_consolidating.pickle", "wb")
     pickle.dump(df_consolidating,pickle_out)

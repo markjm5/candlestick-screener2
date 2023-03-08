@@ -33,7 +33,7 @@ def snapshot():
     now_start = datetime.now()
     start_time = now_start.strftime("%H:%M:%S")    
 
-    data_tickers =  {'ticker': [],'company': [], 'sector': [], 'industry': [], 'shares_outstanding': [],'last_volume': [], 'vs_avg_vol_10d': [], 'vs_avg_vol_3m': [], 'outlook': [],  'percentage': []}    
+    data_tickers =  {'ticker': [],'company': [], 'sector': [], 'industry': [], 'shares_outstanding': [],'last_volume': [], 'vs_avg_vol_10d': [], 'vs_avg_vol_3m': [], 'outlook': [],  'percentage': [], 'last': []}    
     df_tickers_partial = pd.DataFrame(data_tickers)
 
     header = True
@@ -66,7 +66,7 @@ def snapshot():
                     data.to_csv('datasets/daily/{}.csv'.format(symbol))
                     print(symbol)
 
-                    df_tickers_partial.loc[len(df_tickers_partial.index)] = [symbol, company, sector, industry, shares_outstanding, 0,0,0,0,0]
+                    df_tickers_partial.loc[len(df_tickers_partial.index)] = [symbol, company, sector, industry, shares_outstanding, 0,0,0,0,0,0]
 
     df_tickers = get_ticker_data(df_tickers_partial)
     success = get_breakout_data(df_tickers)
@@ -107,14 +107,14 @@ def index():
             df_stock_volume = df_stock_volume[df_stock_volume.vs_avg_vol_3m > 0]
 
             for index, row in df_stock_volume.iterrows():
-                stocks[row['ticker']] = {'company': row['company'], 'vs_avg_vol_10d': "{:.2%}".format(row['vs_avg_vol_10d']),'vs_avg_vol_3m': "{:.2%}".format(row['vs_avg_vol_3m']), 'pattern': row['outlook'], 'sector': row['sector'], 'industry': row['industry']}
+                stocks[row['ticker']] = {'company': row['company'], 'vs_avg_vol_10d': "{:.2%}".format(row['vs_avg_vol_10d']),'vs_avg_vol_3m': "{:.2%}".format(row['vs_avg_vol_3m']), 'pattern': row['outlook'], 'sector': row['sector'], 'industry': row['industry'], 'last':"{:.2f}".format(row['last'])}
 
             df_percentage = df_stock_volume.sort_values(by=['percentage'], ascending=False).reset_index() 
             df_percentage = df_percentage.drop(['vs_avg_vol_10d','vs_avg_vol_3m'], axis=1)
             df_percentage = df_percentage[df_percentage.percentage > 0.05]
 
             for index, row in df_percentage.iterrows():
-                percentage_dict[row['ticker']] = {'company': row['company'],'pattern': row['outlook'], 'sector': row['sector'], 'industry': row['industry'], 'percentage':  "{:.2%}".format(row['percentage'])}
+                percentage_dict[row['ticker']] = {'company': row['company'],'pattern': row['outlook'], 'sector': row['sector'], 'industry': row['industry'], 'percentage':  "{:.2%}".format(row['percentage']),'last':"{:.2f}".format(row['last'])}
 
             df_vol_data_all_sectors = df_stock_volume.drop(['company','ticker','industry','vs_avg_vol_10d','vs_avg_vol_3m', 'outlook'], axis=1)
 
@@ -145,10 +145,10 @@ def index():
             df_breakout = load_data_from_pickle("03_breakout")
 
             for index, row in df_consolidating.iterrows():
-                consolidating[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry']}
+                consolidating[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry'], 'last':"{:.2f}".format(row['last'])}
 
             for index, row in df_breakout.iterrows():
-                breakout[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry']}
+                breakout[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry'], 'last':"{:.2f}".format(row['last'])}
 
             return render_template(template, candlestick_patterns=candlestick_patterns, consolidating=consolidating, breakout=breakout, pattern=pattern)
 
