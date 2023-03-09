@@ -196,6 +196,9 @@ def scrape_table_earningswhispers_earnings_calendar(df_us_companies):
         df = df.append(earnings_whispers_day_df, ignore_index=True)
 
     df = df.drop_duplicates(subset='Ticker', keep="first")
+    df['Market Cap (Mil)'] = pd.to_numeric(df['Market Cap (Mil)'])
+    df = df.sort_values(by=['Market Cap (Mil)'], ascending=False)
+    df = df[:10].reset_index(drop=True)
 
     #pickle the data
     pickle_out = open("04_earnings_calendar.pickle", "wb")
@@ -227,7 +230,7 @@ def scrape_earningswhispers_day(day, df_us_companies):
     df.insert(1,"Time",[],True)
     df.insert(2,"Ticker",[],True)
     df.insert(3,"Company Name",[],True)
-    #df.insert(4,"Market Cap (Mil)",[],True)
+    df.insert(4,"Market Cap (Mil)",[],True)
     #df.insert(5,"EPS",[],True)
     #df.insert(6,"Revenue",[],True)
     #df.insert(7,"Expected Revenue Growth",[],True)
@@ -262,7 +265,7 @@ def scrape_earningswhispers_day(day, df_us_companies):
                 temp_row1.append(ticker_str)
                 temp_row1.append(company_name_str)
                 # Get market cap from US Stocks list
-                #temp_row1.append(df_retrieved_company_data['MARKET_CAP'].iloc[0])
+                temp_row1.append(df_retrieved_company_data['market_cap'].iloc[0])
                 #temp_row1.append(eps)
                 #temp_row1.append(revenue)
                 #temp_row1.append(expected)

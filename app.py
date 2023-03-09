@@ -34,7 +34,7 @@ def snapshot():
     now_start = datetime.now()
     start_time = now_start.strftime("%H:%M:%S")    
 
-    data_tickers =  {'ticker': [],'company': [], 'sector': [], 'industry': [], 'shares_outstanding': [],'last_volume': [], 'vs_avg_vol_10d': [], 'vs_avg_vol_3m': [], 'outlook': [],  'percentage': [], 'last': []}    
+    data_tickers =  {'ticker': [],'company': [], 'sector': [], 'industry': [], 'shares_outstanding': [], 'market_cap': [], 'last_volume': [], 'vs_avg_vol_10d': [], 'vs_avg_vol_3m': [], 'outlook': [],  'percentage': [], 'last': []}    
     df_tickers_partial = pd.DataFrame(data_tickers)
 
     header = True
@@ -54,6 +54,9 @@ def snapshot():
                 sector = line.split(",")[7].replace('\"','')
                 industry = line.split(",")[8].replace('\"','')
                 exchange = line.split(",")[5].replace('\"','')
+
+                #TODO: Get market cap as well, because we want to use it in the earnings calendar
+                market_cap = line.split(",")[2].replace('\"','')
                 exchanges = ['NYSE', 'NSDQ']
                 #TODO: Check that Company is not empty, and only add to the master ticker file if company is not empty
                 if(company != '' and exchange in exchanges):
@@ -67,7 +70,7 @@ def snapshot():
                     data.to_csv('datasets/daily/{}.csv'.format(symbol))
                     print(symbol)
 
-                    df_tickers_partial.loc[len(df_tickers_partial.index)] = [symbol, company, sector, industry, shares_outstanding, 0,0,0,0,0,0]
+                    df_tickers_partial.loc[len(df_tickers_partial.index)] = [symbol, company, sector, industry, shares_outstanding,market_cap, 0,0,0,0,0,0]
 
     df_tickers = get_ticker_data(df_tickers_partial)
     success = get_breakout_data(df_tickers)
