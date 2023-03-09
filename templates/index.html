@@ -17,7 +17,7 @@
     
         <form>
             <select name="pattern">
-                <option value="">-- Select a Pattern --</option>
+                <option value="">-- Select a Topic --</option>
                 {% for key in candlestick_patterns %}
                     <option value="{{ key }}" {% if pattern == key %}selected="selected"{% endif %}>{{ candlestick_patterns[key] }}</option>
                 {% endfor %}

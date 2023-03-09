@@ -7,6 +7,7 @@ import pandas as pd
 from flask import Flask, escape, request, render_template
 from patterns import candlestick_patterns
 from chartlib import get_ticker_data, get_breakout_data, load_data_from_pickle
+from chartlib import scrape_table_earningswhispers_earnings_calendar, scrape_table_marketscreener_economic_calendar
 
 # TODO: Monthly Earnings Calendar
 # TODO: Economic Calendar
@@ -70,6 +71,9 @@ def snapshot():
 
     df_tickers = get_ticker_data(df_tickers_partial)
     success = get_breakout_data(df_tickers)
+
+    success = scrape_table_earningswhispers_earnings_calendar(df_tickers)
+    success = scrape_table_marketscreener_economic_calendar()
 
     now_finish = datetime.now()
     finish_time = now_finish.strftime("%H:%M:%S")
@@ -151,5 +155,37 @@ def index():
                 breakout[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry'], 'last':"{:.2f}".format(row['last'])}
 
             return render_template(template, candlestick_patterns=candlestick_patterns, consolidating=consolidating, breakout=breakout, pattern=pattern)
+
+        if(pattern == 'EARNINGS_CALENDAR'):
+            template = "calendar.html"
+
+            df_earnings_calendar = load_data_from_pickle("04_earnings_calendar")
+
+            result = df_earnings_calendar.to_html()
+
+            """
+            for index, row in df_consolidating.iterrows():
+                consolidating[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry'], 'last':"{:.2f}".format(row['last'])}
+
+            for index, row in df_breakout.iterrows():
+                breakout[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry'], 'last':"{:.2f}".format(row['last'])}
+            """
+            return render_template(template, candlestick_patterns=candlestick_patterns, result=result)
+
+        if(pattern == 'ECONOMIC_CALENDAR'):
+            template = "calendar.html"
+
+            df_economic_calendar = load_data_from_pickle("05_economic_calendar")
+
+            result = df_economic_calendar.to_html()
+
+            """
+            for index, row in df_consolidating.iterrows():
+                consolidating[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry'], 'last':"{:.2f}".format(row['last'])}
+
+            for index, row in df_breakout.iterrows():
+                breakout[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry'], 'last':"{:.2f}".format(row['last'])}
+            """
+            return render_template(template, candlestick_patterns=candlestick_patterns, result=result)
 
     return render_template(template, candlestick_patterns=candlestick_patterns, pattern=pattern)

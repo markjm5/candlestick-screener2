@@ -1,0 +1,27 @@
+<html>
+<head>
+    <style>
+        body { font-family: arial; margin: 20px; }
+        td { padding: 5px; }
+        .bullish { background: green; color: white; }
+        .bearish { background: red; color: white; }
+        .header { border-bottom:2px solid orangered;padding-bottom:5px; }
+    </style>
+</head>
+<body>
+    <h1 class="header">Scanner</h1>
+    <form>
+        <select name="pattern">
+            <option value="">-- Select a Topic --</option>
+            {% for key in candlestick_patterns %}
+                <option value="{{ key }}" {% if pattern == key %}selected="selected"{% endif %}>{{ candlestick_patterns[key] }}</option>
+            {% endfor %}
+        </select>
+
+        <input type="submit" value="Scan" />
+    </form>
+
+    {{ result |safe }}
+
+</body>
+</html>
