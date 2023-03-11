@@ -1,4 +1,6 @@
 import os, sys, time #csv
+import multiprocessing
+import concurrent.futures
 from datetime import datetime, date, timedelta
 import glob
 import json
@@ -8,9 +10,8 @@ from flask import Flask, escape, request, render_template
 from patterns import candlestick_patterns
 from chartlib import get_ticker_data, get_breakout_data, load_data_from_pickle
 from chartlib import scrape_table_earningswhispers_earnings_calendar, scrape_table_marketscreener_economic_calendar
+from chartlib import scrape_table_insider_trades, exchanges
 
-# TODO: Monthly Earnings Calendar
-# TODO: Economic Calendar
 # TODO: Ticker Geographic Exposure Search
 # TODO: ATR Monthly, ATR Quarterly, Price Action csv download
 # TODO: Add Common Header
@@ -28,13 +29,11 @@ latest_file = latest_file.replace("datasets\\", "")
 
 @app.route('/snapshot')
 def snapshot():
-    #get date range
-    exchanges = ['NYSE', 'NSDQ']
-
+    
     now_start = datetime.now()
     start_time = now_start.strftime("%H:%M:%S")    
 
-    data_tickers =  {'ticker': [],'company': [], 'sector': [], 'industry': [], 'shares_outstanding': [], 'market_cap': [], 'last_volume': [], 'vs_avg_vol_10d': [], 'vs_avg_vol_3m': [], 'outlook': [],  'percentage': [], 'last': []}    
+    data_tickers =  {'ticker': [],'company': [], 'sector': [], 'industry': [], 'shares_outstanding': [], 'market_cap': [], 'exchange': [],'last_volume': [], 'vs_avg_vol_10d': [], 'vs_avg_vol_3m': [], 'outlook': [],  'percentage': [], 'last': []}    
     df_tickers_partial = pd.DataFrame(data_tickers)
 
     header = True
@@ -47,7 +46,6 @@ def snapshot():
                 header = False
                 continue
             else:
-                #import pdb; pdb.set_trace()
                 symbol = line.split(",")[1]
                 symbol = symbol.replace("\"","")
                 company = line.split(",")[0].replace('\"','')
@@ -70,13 +68,17 @@ def snapshot():
                     data.to_csv('datasets/daily/{}.csv'.format(symbol))
                     print(symbol)
 
-                    df_tickers_partial.loc[len(df_tickers_partial.index)] = [symbol, company, sector, industry, shares_outstanding,market_cap, 0,0,0,0,0,0]
+                    df_tickers_partial.loc[len(df_tickers_partial.index)] = [symbol, company, sector, industry, shares_outstanding,market_cap, exchange,0,0,0,0,0,0]
 
     df_tickers = get_ticker_data(df_tickers_partial)
-    success = get_breakout_data(df_tickers)
 
-    success = scrape_table_earningswhispers_earnings_calendar(df_tickers)
-    success = scrape_table_marketscreener_economic_calendar()
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        f1 = executor.submit(get_breakout_data, df_tickers)
+        f2 = executor.submit(scrape_table_earningswhispers_earnings_calendar, df_tickers)
+        f3 = executor.submit(scrape_table_marketscreener_economic_calendar)
+
+    #TODO: This needs to be in a concurrent process. Also get stock data and run in process
+    #success = scrape_table_insider_trades(df_tickers)
 
     now_finish = datetime.now()
     finish_time = now_finish.strftime("%H:%M:%S")
@@ -166,13 +168,6 @@ def index():
 
             result = df_earnings_calendar.to_html()
 
-            """
-            for index, row in df_consolidating.iterrows():
-                consolidating[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry'], 'last':"{:.2f}".format(row['last'])}
-
-            for index, row in df_breakout.iterrows():
-                breakout[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry'], 'last':"{:.2f}".format(row['last'])}
-            """
             return render_template(template, candlestick_patterns=candlestick_patterns, result=result)
 
         if(pattern == 'ECONOMIC_CALENDAR'):
@@ -182,13 +177,16 @@ def index():
 
             result = df_economic_calendar.to_html()
 
-            """
-            for index, row in df_consolidating.iterrows():
-                consolidating[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry'], 'last':"{:.2f}".format(row['last'])}
-
-            for index, row in df_breakout.iterrows():
-                breakout[row['symbol']] = {'company': row['company'], 'sector': row['sector'], 'industry': row['industry'], 'last':"{:.2f}".format(row['last'])}
-            """
             return render_template(template, candlestick_patterns=candlestick_patterns, result=result)
+
+        if(pattern == 'INSIDER_TRADING'):
+            template = "calendar.html"
+            #scrape_table_insider_trades(df_tickers)
+            #df_economic_calendar = load_data_from_pickle("05_economic_calendar")
+
+            #result = df_economic_calendar.to_html()
+
+            #return render_template(template, candlestick_patterns=candlestick_patterns, result=result)
+
 
     return render_template(template, candlestick_patterns=candlestick_patterns, pattern=pattern)

@@ -10,6 +10,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
+exchanges = ['NYSE', 'NSDQ']
+
 def get_page(url):
   # When website blocks your request, simulate browser request: https://stackoverflow.com/questions/56506210/web-scraping-with-python-problem-with-beautifulsoup
   header={'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2227.0 Safari/537.36'}
@@ -385,6 +387,41 @@ def scrape_table_marketscreener_economic_calendar():
 
     return True
 
+def scrape_table_insider_trades(df_tickers):
+    for index, row in df_tickers.iterrows():
+        try:
+            symbol = row['ticker']
+            company = row['company']
+
+            exchange = row['exchange']
+
+            if(company != '' and exchange in exchanges):
+                url = "http://openinsider.com/search?q=%s" % (symbol,)
+                print("Getting Insider Trading Data: %s" % symbol)
+                page = get_page_selenium(url)
+    
+                soup = BeautifulSoup(page, 'html.parser')
+
+                table = soup.find_all('table')[11]
+
+                df = convert_html_table_insider_trading_to_df(table, True)
+
+                df = dataframe_convert_to_numeric(df,'value')
+                df = dataframe_convert_to_numeric(df,'qty')
+
+                # Write these to csv file for each company
+                df.to_csv('datasets/insider/{}.csv'.format(symbol))
+
+                #TODO: make an aggregate line item relating to qty and value, compared to total shares
+                #TODO: add to df of consolidate metrics for all symbols                
+
+        except Exception as e:
+            print('failed to get data')
+
+    #TODO: Some screening of stocks based on insider trading data - https://www.putnam.com/individual/content/marketOutlooks/1102-when-to-pay-attention-to-insider-buying
+    #TODO: Pickle the data
+    return True
+
 
 def load_data_from_pickle(name):
 
@@ -394,3 +431,53 @@ def load_data_from_pickle(name):
     df = pickle.load(pickle_in)
 
     return df
+
+def convert_html_table_insider_trading_to_df(table, contains_th):
+  data =  {'date': [],'name': [],'title': [], 'type': [] ,'qty': [], 'value': []}
+  df = pd.DataFrame(data)
+  
+  try:
+    table_rows = table.find_all('tr')
+  except AttributeError as e:
+    return df
+
+  first_row = True
+
+  for tr in table_rows:
+    temp_row = []
+
+    if(first_row):
+        first_row = False
+    else:
+        td = tr.find_all('td')
+        for obs in td:
+            text = str(obs.text).strip()
+            temp_row.append(text)        
+
+        sold_type = temp_row[6] 
+        sold_date = temp_row[1] # Date
+        sold_name = temp_row[4] # Name
+        sold_title = temp_row[5] # Title
+        sold_qty = temp_row[8] # Qty Sold
+        sold_value = temp_row[11] # Value
+
+        df.loc[len(df.index)] = [sold_date, sold_name, sold_title, sold_type, sold_qty, sold_value]
+
+  return df
+
+def dataframe_convert_to_numeric(df, column):
+  #TODO: Deal with percentages and negative values in brackets
+  try:
+    df[column] = df[column].str.replace('NA','')
+    df[column] = df[column].str.replace('$','', regex=False)
+    df[column] = df[column].str.replace('--','')
+    df[column] = df[column].str.replace(',','').replace('–','0.00')
+    df[column] = df[column].str.replace('(','-', regex=True)
+    df[column] = df[column].str.replace(')','', regex=True)
+  except KeyError as e:
+    print(df)
+    print(column)
+
+  df[column] = pd.to_numeric(df[column])
+
+  return df
